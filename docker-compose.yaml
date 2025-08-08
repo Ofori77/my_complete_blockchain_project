@@ -1,0 +1,41 @@
+networks:
+  test:
+    name: fabric_test
+
+services:
+  django-backend:
+    container_name: django-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    working_dir: /app
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=farmcred.farmcred.settings
+      - PYTHONPATH=/app # Added this line to fix the module not found error
+    networks:
+      - test
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+      # The line below is important for preventing issues with node_modules on the host machine.
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - test
+    depends_on:
+      - django-backend
+    command: npm run dev # Simplified the command to just start the app
